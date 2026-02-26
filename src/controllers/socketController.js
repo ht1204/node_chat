@@ -123,18 +123,12 @@ function registerSocketHandlers(io) {
         return;
       }
 
-      // Move all users in the deleted room to General
-      io.in(roomId).socketsJoin(store.DEFAULT_ROOM_ID);
-      io.in(roomId).socketsLeave(roomId);
+      // Notify clients in the deleted room so they re-join General
+      // This ensures each socket's currentRoom state is properly updated
+      // via the room:join handler on both client and server
+      io.to(roomId).emit('room:deleted', { roomId });
 
       io.emit('room:list', store.getRooms());
-      io.emit('room:deleted', { roomId });
-
-      // Send history of General to displaced users
-      io.to(store.DEFAULT_ROOM_ID).emit('room:history', {
-        roomId: store.DEFAULT_ROOM_ID,
-        messages: store.getRoomMessages(store.DEFAULT_ROOM_ID),
-      });
     });
 
     // Handle disconnection
